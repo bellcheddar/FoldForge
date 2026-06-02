@@ -1,0 +1,2541 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoldForge v5 — Boltz-2 Prediction GUI</title>
+<meta name="description" content="FoldForge: professional GUI for Boltz-2 structural prediction">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* ============================================================
+   ART DIRECTION: Scientific precision tool — dark workspace,
+   cyan-teal accent (structural biology lab aesthetic), dense.
+   Palette: deep charcoal surfaces, #4f98a3 teal, monochrome.
+   Typography: Inter (body) + JetBrains Mono (code/data)
+   Density: dense — scientific dashboard, data-forward
+   ============================================================ */
+
+/* === DESIGN TOKENS === */
+:root {
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;
+
+  --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem; --radius-full: 9999px;
+
+  --transition-interactive: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --font-body: 'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+
+  --content-narrow: 640px;
+  --content-default: 960px;
+  --content-wide: 1280px;
+}
+
+/* === DARK THEME (default) === */
+:root, [data-theme="dark"] {
+  --color-bg:              #0f0e0d;
+  --color-surface:         #141312;
+  --color-surface-2:       #1a1917;
+  --color-surface-3:       #1f1e1c;
+  --color-surface-offset:  #252422;
+  --color-surface-dynamic: #2e2c2a;
+  --color-divider:         #2a2826;
+  --color-border:          #353330;
+
+  --color-text:            #e2e0dc;
+  --color-text-muted:      #8a8884;
+  --color-text-faint:      #504e4c;
+  --color-text-inverse:    #0f0e0d;
+
+  --color-primary:         #4f98a3;
+  --color-primary-hover:   #5eadb9;
+  --color-primary-active:  #3d7e8a;
+  --color-primary-dim:     #1e3b40;
+  --color-primary-highlight: #1a3035;
+
+  --color-success:         #5a9e42;
+  --color-success-hover:   #6db552;
+  --color-success-dim:     #1e3318;
+  --color-warning:         #c47d30;
+  --color-warning-dim:     #3a2810;
+  --color-error:           #b84444;
+  --color-error-dim:       #3a1818;
+  --color-orange:          #d4844a;
+
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 4px 14px oklch(0 0 0 / 0.5);
+  --shadow-lg: 0 12px 36px oklch(0 0 0 / 0.6);
+}
+
+[data-theme="light"] {
+  --color-bg:              #f4f3ef;
+  --color-surface:         #f8f7f3;
+  --color-surface-2:       #faf9f6;
+  --color-surface-3:       #ffffff;
+  --color-surface-offset:  #eeece8;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider:         #dbd9d4;
+  --color-border:          #d2d0cb;
+
+  --color-text:            #1e1c18;
+  --color-text-muted:      #6b6966;
+  --color-text-faint:      #b0aead;
+  --color-text-inverse:    #f8f7f3;
+
+  --color-primary:         #016870;
+  --color-primary-hover:   #014f56;
+  --color-primary-active:  #013a3f;
+  --color-primary-dim:     #d0e4e6;
+  --color-primary-highlight: #e4f0f2;
+
+  --color-success:         #3d7224;
+  --color-success-hover:   #2d5518;
+  --color-success-dim:     #d8e9ce;
+  --color-warning:         #8a5010;
+  --color-warning-dim:     #f0dfc8;
+  --color-error:           #8a2020;
+  --color-error-dim:       #f0d0d0;
+  --color-orange:          #9a4a10;
+
+  --shadow-sm: 0 1px 3px oklch(0.2 0.01 80 / 0.08);
+  --shadow-md: 0 4px 14px oklch(0.2 0.01 80 / 0.1);
+  --shadow-lg: 0 12px 36px oklch(0.2 0.01 80 / 0.14);
+}
+
+/* === BASE RESET === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+body {
+  height: 100%;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+img, svg { display: block; max-width: 100%; }
+input, button, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: none; }
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+::selection { background: oklch(from var(--color-primary) l c h / 0.25); }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: var(--radius-sm); }
+pre, code, .mono { font-family: var(--font-mono); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+/* === APP LAYOUT === */
+.app-shell {
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  grid-template-columns: 200px 1fr;
+  height: 100vh;
+  height: 100dvh;
+}
+.top-bar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  z-index: 100;
+}
+.sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.main-content {
+  grid-column: 2;
+  grid-row: 2;
+  overflow-y: auto;
+  background: var(--color-bg);
+  position: relative;
+}
+
+/* === LOGO === */
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+.logo-mark { width: 28px; height: 28px; flex-shrink: 0; }
+.logo-text {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 10px;
+  color: var(--color-text-faint);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.top-bar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+.top-nav-links {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+.top-nav-link {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  transition: color var(--transition-interactive), background var(--transition-interactive);
+  white-space: nowrap;
+}
+.top-nav-link:hover { color: var(--color-text); background: var(--color-surface-offset); }
+.top-bar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* === STATUS INDICATORS === */
+.status-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-faint);
+  flex-shrink: 0;
+}
+.status-dot.active {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px oklch(from var(--color-success) l c h / 0.25);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.status-dot.warning { background: var(--color-warning); }
+.status-dot.ready { background: var(--color-primary); }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* === THEME TOGGLE === */
+.theme-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-interactive), background var(--transition-interactive);
+}
+.theme-toggle:hover { color: var(--color-text); background: var(--color-surface-offset); }
+
+/* === SIDEBAR NAV === */
+.sidebar-nav {
+  padding: var(--space-3) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--transition-interactive), background var(--transition-interactive);
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+}
+.nav-item:hover { color: var(--color-text); background: var(--color-surface-2); }
+.nav-item.active { color: var(--color-primary); background: var(--color-primary-highlight); }
+.nav-item svg { flex-shrink: 0; opacity: 0.8; }
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+  padding: var(--space-4) var(--space-3) var(--space-1);
+}
+
+/* === PAGE PANELS === */
+.panel {
+  display: none;
+  padding: var(--space-6);
+  max-width: 100%;
+}
+.panel.active { display: block; }
+
+/* === COMMON UI COMPONENTS === */
+.section-heading {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.sub-heading {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.form-row {
+  margin-bottom: var(--space-3);
+}
+.form-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.form-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+}
+.form-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.15); }
+.form-input::placeholder { color: var(--color-text-faint); }
+textarea.form-input { resize: vertical; min-height: 80px; font-family: var(--font-mono); font-size: var(--text-xs); }
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition-interactive), color var(--transition-interactive), box-shadow var(--transition-interactive);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:active { background: var(--color-primary-active); }
+
+.btn-secondary {
+  background: var(--color-surface-offset);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover { background: var(--color-surface-dynamic); color: var(--color-text); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+.btn-success {
+  background: var(--color-success);
+  color: #fff;
+}
+.btn-success:hover { filter: brightness(1.1); }
+
+.btn-danger {
+  background: var(--color-error);
+  color: #fff;
+}
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: 11px;
+  gap: var(--space-1);
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* === BADGE === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-family: var(--font-mono);
+  gap: var(--space-1);
+}
+.badge-primary { background: var(--color-primary-dim); color: var(--color-primary); }
+.badge-success { background: var(--color-success-dim); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-dim); color: var(--color-warning); }
+.badge-error   { background: var(--color-error-dim);   color: var(--color-error); }
+.badge-neutral { background: var(--color-surface-offset); color: var(--color-text-muted); }
+
+/* === CODE BLOCK === */
+.code-block {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.7;
+  position: relative;
+}
+.code-block .kw  { color: var(--color-primary); }
+.code-block .str { color: #7ec8a4; }
+.code-block .cmt { color: var(--color-text-faint); font-style: italic; }
+.code-block .num { color: var(--color-orange); }
+
+/* === DIVIDER === */
+.divider { height: 1px; background: var(--color-divider); margin: var(--space-4) 0; }
+
+/* === CHECKBOX & TOGGLE === */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.checkbox-row input[type="checkbox"] {
+  width: 14px; height: 14px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checkbox-label { font-size: var(--text-xs); color: var(--color-text-muted); cursor: pointer; }
+.checkbox-mono  { font-family: var(--font-mono); color: var(--color-text); }
+
+/* === INPUT ROW (label + button) === */
+.input-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.input-group .form-input { flex: 1; min-width: 0; }
+
+/* === TABS (subtabs) === */
+.subtabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+}
+.subtab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--transition-interactive), border-color var(--transition-interactive);
+}
+.subtab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+.subtab:hover:not(.active) { color: var(--color-text); }
+.subtab-panel { display: none; }
+.subtab-panel.active { display: block; }
+
+/* === GRID LAYOUTS === */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); }
+@media (max-width: 800px) {
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .app-shell { grid-template-columns: 1fr; grid-template-rows: 48px auto 1fr; }
+  .sidebar { grid-column: 1; grid-row: 2; border-right: none; border-bottom: 1px solid var(--color-border); flex-direction: row; overflow-x: auto; height: auto; }
+  .sidebar-section-label { display: none; }
+  .sidebar-nav { flex-direction: row; flex-wrap: nowrap; padding: var(--space-2); gap: var(--space-1); }
+  .main-content { grid-column: 1; grid-row: 3; overflow: auto; }
+}
+
+/* === JOB CARDS === */
+.job-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  transition: box-shadow var(--transition-interactive);
+}
+.job-card:hover { box-shadow: var(--shadow-md); }
+.job-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+.job-card-title { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.job-card-meta { font-size: 11px; color: var(--color-text-faint); font-family: var(--font-mono); }
+.job-card-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+
+/* === RESULTS TABLE === */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.results-table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.results-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-divider);
+  font-family: var(--font-mono);
+  vertical-align: middle;
+}
+.results-table tr:hover td { background: var(--color-surface-2); }
+.results-table tr:last-child td { border-bottom: none; }
+
+/* === KPI CARDS === */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); }
+.kpi-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+}
+.kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-faint); margin-bottom: var(--space-1); }
+.kpi-value { font-size: var(--text-lg); font-weight: 600; color: var(--color-text); font-family: var(--font-mono); line-height: 1; }
+.kpi-value.accent { color: var(--color-primary); }
+.kpi-value.success { color: var(--color-success); }
+
+/* === ALERT / INFO BOX === */
+.info-box {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  margin-bottom: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.info-box.info   { background: var(--color-primary-highlight); border: 1px solid oklch(from var(--color-primary) l c h / 0.25); color: var(--color-primary); }
+.info-box.warn   { background: var(--color-warning-dim); border: 1px solid oklch(from var(--color-warning) l c h / 0.3); color: var(--color-warning); }
+.info-box.success{ background: var(--color-success-dim); border: 1px solid oklch(from var(--color-success) l c h / 0.3); color: var(--color-success); }
+.info-box.error  { background: var(--color-error-dim); border: 1px solid oklch(from var(--color-error) l c h / 0.3); color: var(--color-error); }
+
+/* === MODAL === */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: oklch(0 0 0 / 0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  width: min(720px, calc(100vw - var(--space-8)));
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(8px);
+  transition: transform 200ms ease;
+}
+.modal-backdrop.open .modal { transform: translateY(0); }
+.modal-header {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.modal-title { font-size: var(--text-sm); font-weight: 600; flex: 1; }
+.modal-body { padding: var(--space-4) var(--space-5); overflow-y: auto; flex: 1; }
+.modal-footer { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--color-border); display: flex; gap: var(--space-2); justify-content: flex-end; flex-shrink: 0; }
+
+/* === LOG CONSOLE === */
+.log-console {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-height: 200px;
+  max-height: 360px;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+.log-line { display: block; }
+.log-line.log-ok   { color: var(--color-success); }
+.log-line.log-warn { color: var(--color-warning); }
+.log-line.log-err  { color: var(--color-error); }
+.log-line.log-info { color: var(--color-primary); }
+
+/* === DIR PICKER UI === */
+.dir-pick-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.dir-pick-input-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.dir-pick-status {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+}
+.dir-pick-status.acquired { border-color: oklch(from var(--color-success) l c h / 0.4); color: var(--color-success); background: var(--color-success-dim); }
+.dir-pick-status.manual   { border-color: oklch(from var(--color-warning) l c h / 0.4); color: var(--color-warning); background: var(--color-warning-dim); }
+
+/* hidden file input for Safari fallback */
+#dir-picker-input { display: none; }
+
+/* === WORKFLOW STEPS === */
+.workflow-steps { display: flex; gap: var(--space-4); margin-bottom: var(--space-6); flex-wrap: wrap; }
+.step-item {
+  flex: 1; min-width: 160px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  position: relative;
+}
+.step-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-1);
+}
+.step-title { font-size: var(--text-xs); font-weight: 600; color: var(--color-text); margin-bottom: var(--space-1); }
+.step-desc  { font-size: 11px; color: var(--color-text-faint); line-height: 1.5; }
+
+/* === RESOURCE LINK CARDS === */
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.resource-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-1);
+  text-decoration: none;
+  transition: box-shadow var(--transition-interactive), border-color var(--transition-interactive);
+}
+.resource-card:hover { box-shadow: var(--shadow-md); border-color: oklch(from var(--color-primary) l c h / 0.4); }
+.resource-card-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-primary); }
+.resource-card-title { font-size: var(--text-xs); font-weight: 600; color: var(--color-text); }
+.resource-card-desc  { font-size: 11px; color: var(--color-text-faint); line-height: 1.5; }
+
+/* === OUTPUT METRICS === */
+.metric-explainers { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.metric-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+}
+.metric-name { font-size: 11px; font-family: var(--font-mono); color: var(--color-primary); margin-bottom: var(--space-1); }
+.metric-range { font-size: 10px; color: var(--color-warning); font-family: var(--font-mono); margin-bottom: var(--space-1); }
+.metric-desc { font-size: 11px; color: var(--color-text-faint); line-height: 1.5; }
+
+/* === MISC === */
+.flex-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.spacer { flex: 1; }
+.muted { color: var(--color-text-muted); }
+.faint { color: var(--color-text-faint); }
+.mono  { font-family: var(--font-mono); }
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-3 { margin-bottom: var(--space-3); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.bold { font-weight: 600; }
+.version-badge {
+  font-size: 10px; font-family: var(--font-mono);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid oklch(from var(--color-primary) l c h / 0.3);
+}
+.scroll-table { overflow-x: auto; }
+
+/* === DOWNLOAD MODAL / FILE BROWSER (v5) === */
+.file-browser-list { list-style:none; display:flex; flex-direction:column; gap:var(--space-2); }
+.file-browser-item {
+  display:flex; align-items:center; gap:var(--space-3);
+  padding:var(--space-2) var(--space-3);
+  background:var(--color-surface-offset);
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-md);
+  font-size:var(--text-xs); font-family:var(--font-mono);
+}
+.file-browser-item .file-name { flex:1; color:var(--color-text); }
+.file-browser-item .file-meta { color:var(--color-text-faint); font-size:11px; }
+.file-type-badge {
+  font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;
+  padding:2px 6px; border-radius:var(--radius-full);
+  background:var(--color-primary-dim); color:var(--color-primary);
+}
+.dl-progress-bar-wrap {
+  height:4px; background:var(--color-surface-offset);
+  border-radius:var(--radius-full); overflow:hidden; margin-top:var(--space-2);
+}
+.dl-progress-bar {
+  height:100%; background:var(--color-primary);
+  border-radius:var(--radius-full); transition:width 300ms ease; width:0%;
+}
+
+</style>
+</head>
+<body>
+
+<!-- hidden file input for webkitdirectory (Safari fallback) -->
+<input type="file" id="dir-picker-input" webkitdirectory multiple accept="*/*" aria-label="Select run directory">
+
+<div class="app-shell">
+
+  <!-- ==================== TOP BAR ==================== -->
+  <header class="top-bar" role="banner">
+    <a href="#" class="logo-wrap" aria-label="FoldForge home">
+      <svg class="logo-mark" aria-hidden="true" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="13" width="5" height="13" rx="1" fill="var(--color-primary)" opacity="0.9"/>
+        <rect x="9" y="8" width="5" height="18" rx="1" fill="var(--color-primary)" opacity="0.75"/>
+        <rect x="16" y="4" width="5" height="22" rx="1" fill="var(--color-primary)" opacity="0.55"/>
+        <path d="M4.5 13 Q14 3 23.5 4" stroke="var(--color-primary)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="logo-text">FoldForge</div>
+        <div class="logo-sub">Boltz-2 GUI</div>
+      </div>
+    </a>
+
+    <div class="top-bar-sep" aria-hidden="true"></div>
+
+    <nav class="top-nav-links" aria-label="External links">
+      <a href="https://marcdeller.com" target="_blank" rel="noopener noreferrer" class="top-nav-link">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        marcdeller.com
+      </a>
+      <a href="https://github.com/jwohlwend/boltz" target="_blank" rel="noopener noreferrer" class="top-nav-link">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        Boltz-2 GitHub
+      </a>
+    </nav>
+
+    <div class="top-bar-sep" aria-hidden="true"></div>
+
+    <div class="status-strip" role="status" aria-label="Application status">
+      <div class="status-pill" id="status-yaml">
+        <div class="status-dot" id="dot-yaml"></div>
+        <span id="lbl-yaml">No YAML</span>
+      </div>
+      <div class="status-pill" id="status-job">
+        <div class="status-dot" id="dot-job"></div>
+        <span id="lbl-job">No Job</span>
+      </div>
+      <div class="status-pill" id="status-fb">
+        <div class="status-dot" id="dot-fb"></div>
+        <span id="lbl-fb">Firebase</span>
+      </div>
+    </div>
+
+    <div class="top-bar-right">
+      <span class="version-badge">v5</span>
+      <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark/light theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <nav class="sidebar" aria-label="Main navigation">
+    <div class="sidebar-section-label">Navigation</div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-tab="frontpage" aria-current="page">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Frontpage
+      </button>
+      <button class="nav-item" data-tab="setup">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Setup & YAML
+      </button>
+      <button class="nav-item" data-tab="jobs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Running Jobs
+      </button>
+      <button class="nav-item" data-tab="results">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Results
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="main-content" id="main-content" role="main">
+
+    <!-- ====== FRONTPAGE ====== -->
+    <section class="panel active" id="panel-frontpage" aria-labelledby="heading-frontpage">
+      <h1 id="heading-frontpage" class="section-heading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        FoldForge — Boltz-2 Prediction Interface
+      </h1>
+
+      <div class="info-box info mb-4">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>FoldForge provides a browser-based GUI for Boltz-2 structure prediction. Configure inputs, queue jobs, write run scripts to disk, and track results — all in one place.</span>
+      </div>
+
+      <h2 class="sub-heading">Workflow Overview</h2>
+      <div class="workflow-steps">
+        <div class="step-item">
+          <div class="step-num">Step 01</div>
+          <div class="step-title">Setup Installation</div>
+          <div class="step-desc">Set the path to your local Boltz-2 binary and save it to Firebase. One-time per machine.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 02</div>
+          <div class="step-title">Build YAML Input</div>
+          <div class="step-desc">Enter protein FASTA sequences and ligand SMILES. Add pocket constraints and affinity settings. Export your <code>input.yaml</code>.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 03</div>
+          <div class="step-title">Configure &amp; Queue Job</div>
+          <div class="step-desc">Select your YAML, set Boltz-2 run parameters, pick your settings, then queue a job and download a ZIP package containing all required files.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">Step 04</div>
+          <div class="step-title">Analyse Results</div>
+          <div class="step-desc">Run <code>analyze_boltz.py</code> from the downloaded ZIP to generate CSV output. Upload to the Results tab to view confidence scores, pIC50, and affinity data.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 class="sub-heading">Example <code>input.yaml</code></h2>
+      <div class="code-block"><span class="cmt"># FoldForge / Boltz-2 input YAML — generated via Setup tab</span>
+<span class="kw">sequences</span>:
+  - <span class="kw">protein</span>:
+      <span class="kw">id</span>: <span class="str">GLR</span>
+      <span class="kw">sequence</span>: <span class="str">ATVSLWETVQKWREYRRQCQRSLTEDPPPATDLFC...</span>
+  - <span class="kw">protein</span>:
+      <span class="kw">id</span>: <span class="str">GSA</span>
+      <span class="kw">sequence</span>: <span class="str">MGCLGNSKTEDQRNEEKAQREANKKIEKQLQKDK...</span>
+  - <span class="kw">ligand</span>:
+      <span class="kw">smiles</span>: <span class="str">'CC[C@H]1C[C@@H](c2ccc(...)cc2-...)N(...)C1'</span>
+      <span class="kw">id</span>: <span class="str">D111</span>
+<span class="kw">constraints</span>:
+  - <span class="kw">pocket</span>:
+      <span class="kw">binder</span>: <span class="str">D111</span>
+      <span class="kw">contacts</span>: [[<span class="str">GLR</span>, <span class="num">353</span>]]
+<span class="kw">properties</span>:
+  - <span class="kw">affinity</span>:
+      <span class="kw">binder</span>: <span class="str">D111</span></div>
+
+      <div class="divider"></div>
+
+      <h2 class="sub-heading">Key Output Metrics</h2>
+      <div class="metric-explainers">
+        <div class="metric-card">
+          <div class="metric-name">confidence_score</div>
+          <div class="metric-range">Range: 0 – 1</div>
+          <div class="metric-desc">Overall model confidence. Values above 0.7 indicate high-quality predictions.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">affinity_pred_value1</div>
+          <div class="metric-range">Units: pKd / ΔG proxy</div>
+          <div class="metric-desc">Predicted binding affinity score. Lower is tighter. Used to compute pIC50.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">affinity_probability_binary1</div>
+          <div class="metric-range">Range: 0 – 1</div>
+          <div class="metric-desc">Probability of binder classification (&gt;0.5 = likely binder).</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">pIC50</div>
+          <div class="metric-range">Formula: (6 − val) × 1.364</div>
+          <div class="metric-desc">Derived inhibitory concentration estimate. Higher = more potent. &gt;6 is drug-like range.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <h2 class="sub-heading">Boltz-2 Resources</h2>
+      <div class="resource-grid">
+        <a href="https://github.com/jwohlwend/boltz" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">GitHub</div>
+          <div class="resource-card-title">Boltz-2 Repository</div>
+          <div class="resource-card-desc">Source code, installation instructions, and issue tracker.</div>
+        </a>
+        <a href="https://github.com/jwohlwend/boltz/blob/main/docs/prediction.md" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">Docs</div>
+          <div class="resource-card-title">Prediction Guide</div>
+          <div class="resource-card-desc">How to run structure predictions with boltz predict.</div>
+        </a>
+        <a href="https://github.com/jwohlwend/boltz/blob/main/docs/input_format.md" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">Docs</div>
+          <div class="resource-card-title">Input Format</div>
+          <div class="resource-card-desc">Full YAML schema: sequences, constraints, properties.</div>
+        </a>
+        <a href="https://github.com/jwohlwend/boltz/blob/main/docs/affinity.md" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">Affinity</div>
+          <div class="resource-card-title">Affinity Prediction</div>
+          <div class="resource-card-desc">Documentation for affinity scoring outputs.</div>
+        </a>
+        <a href="https://github.com/jwohlwend/boltz/releases" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">Releases</div>
+          <div class="resource-card-title">Changelog &amp; Releases</div>
+          <div class="resource-card-desc">Download latest Boltz-2 releases and view version history.</div>
+        </a>
+        <a href="https://github.com/jwohlwend/boltz/issues" target="_blank" rel="noopener noreferrer" class="resource-card">
+          <div class="resource-card-tag">Support</div>
+          <div class="resource-card-title">Issues &amp; Discussions</div>
+          <div class="resource-card-desc">Report bugs and ask questions on GitHub.</div>
+        </a>
+      </div>
+
+      <div class="divider"></div>
+      <div class="flex-row">
+        <button class="btn btn-primary" onclick="switchTab('setup')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          Go to Setup
+        </button>
+        <a href="https://github.com/jwohlwend/boltz" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">
+          View on GitHub
+        </a>
+      </div>
+    </section>
+
+    <!-- ====== SETUP ====== -->
+    <section class="panel" id="panel-setup" aria-labelledby="heading-setup">
+      <h1 id="heading-setup" class="section-heading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Setup &amp; YAML Builder
+      </h1>
+
+      <div class="subtabs" role="tablist" aria-label="Setup sections">
+        <button class="subtab active" role="tab" aria-selected="true" data-subtab="install">Installation</button>
+        <button class="subtab" role="tab" aria-selected="false" data-subtab="yaml-builder">YAML Builder</button>
+        <button class="subtab" role="tab" aria-selected="false" data-subtab="yaml-preview">Preview &amp; Export</button>
+      </div>
+
+      <!-- Install subtab -->
+      <div class="subtab-panel active" id="subtab-install">
+        <div class="card">
+          <div class="card-title">Boltz-2 Binary Path</div>
+          <p class="text-xs muted mb-3">Set the path to your local Boltz-2 executable. This is saved to Firebase against your user ID and auto-loaded on next visit.</p>
+          <div class="form-row">
+            <label class="form-label" for="boltz-path">Boltz-2 Binary Path</label>
+            <div class="input-group">
+              <input type="text" id="boltz-path" class="form-input mono"
+                placeholder="/opt/anaconda3/envs/boltz_2_2_1_env/bin/boltz"
+                value="/opt/anaconda3/envs/boltz_2_2_1_env/bin/boltz"
+                aria-describedby="boltz-path-hint">
+              <button class="btn btn-primary" id="btn-save-path">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                Save
+              </button>
+            </div>
+            <p class="text-xs faint mt-2" id="boltz-path-hint">Example: /opt/anaconda3/envs/boltz_2_2_1_env/bin/boltz</p>
+          </div>
+          <div id="path-save-status"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">User ID</div>
+          <p class="text-xs muted mb-3">Your settings (Boltz path, saved YAMLs) are stored in Firebase under this user ID. Change it to switch profiles.</p>
+          <div class="form-row">
+            <label class="form-label" for="user-id">User ID</label>
+            <div class="input-group">
+              <input type="text" id="user-id" class="form-input mono" placeholder="user1" value="user1">
+              <button class="btn btn-secondary" id="btn-load-profile">Load Profile</button>
+            </div>
+          </div>
+          <div id="profile-status"></div>
+        </div>
+      </div>
+
+      <!-- YAML Builder subtab -->
+      <div class="subtab-panel" id="subtab-yaml-builder">
+        <div class="card">
+          <div class="card-title">Protein Chains</div>
+          <div id="protein-chains-container"></div>
+          <button class="btn btn-ghost btn-sm mt-2" id="btn-add-protein">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Protein Chain
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Ligands</div>
+          <div id="ligands-container"></div>
+          <button class="btn btn-ghost btn-sm mt-2" id="btn-add-ligand">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Ligand
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">File Settings</div>
+          <div class="two-col">
+            <div class="form-row">
+              <label class="form-label" for="yaml-filename">YAML Filename</label>
+              <input type="text" id="yaml-filename" class="form-input mono" placeholder="input" value="input">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="yaml-notes">Notes (optional)</label>
+              <input type="text" id="yaml-notes" class="form-input" placeholder="GLP-1R + compound X">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-generate-yaml">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Generate YAML
+          </button>
+        </div>
+      </div>
+
+      <!-- YAML Preview subtab -->
+      <div class="subtab-panel" id="subtab-yaml-preview">
+        <div class="card">
+          <div class="card-title flex-row">
+            Generated YAML
+            <div class="spacer"></div>
+            <span class="badge badge-neutral" id="yaml-preview-filename">—</span>
+          </div>
+          <div class="code-block" id="yaml-preview-content" style="white-space:pre;overflow:auto;min-height:200px;">
+            <span class="faint">Generate a YAML in the Builder tab first…</span>
+          </div>
+          <div class="flex-row mt-2">
+            <button class="btn btn-secondary btn-sm" id="btn-copy-yaml">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-download-yaml">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download .yaml
+            </button>
+            <button class="btn btn-primary btn-sm" id="btn-save-yaml-firebase">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Save to Firebase
+            </button>
+          </div>
+          <div id="yaml-save-status" class="mt-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== JOBS ====== -->
+    <section class="panel" id="panel-jobs" aria-labelledby="heading-jobs">
+      <h1 id="heading-jobs" class="section-heading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Running Jobs
+      </h1>
+
+      <div class="two-col" style="align-items:start">
+
+        <!-- Left: Inputs Panel -->
+        <div>
+          <div class="card">
+            <div class="card-title">Job Configuration</div>
+
+            <div class="form-row">
+              <label class="form-label" for="job-yaml-select">Input YAML</label>
+              <div class="input-group">
+                <select id="job-yaml-select" class="form-input">
+                  <option value="">— Select YAML —</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="btn-refresh-yamls" aria-label="Refresh YAML list">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ====== BOLTZ RUN DIRECTORY — ROBUST CROSS-BROWSER ====== -->
+            <div class="form-row">
+              <label class="form-label" for="run-dir-display">Boltz Run Directory</label>
+              <div class="dir-pick-row">
+                <div class="dir-pick-input-row">
+                  <input type="text" id="run-dir-display" class="form-input mono"
+                    placeholder="Select or type a directory path…"
+                    aria-describedby="run-dir-status">
+                  <button class="btn btn-secondary" id="btn-pick-dir" aria-label="Browse for run directory">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Browse…
+                  </button>
+                </div>
+                <div class="dir-pick-status" id="run-dir-status" role="status">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <span id="run-dir-status-text">No directory selected — click Browse or type a path</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label class="form-label" for="out-dir">Output Directory</label>
+              <input type="text" id="out-dir" class="form-input mono" value="./output" placeholder="./output">
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="sub-heading" style="margin-bottom:var(--space-2)">Boltz Options</div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="opt-potentials" checked>
+              <label for="opt-potentials" class="checkbox-label"><span class="checkbox-mono">--use_potentials</span></label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="opt-msa" checked>
+              <label for="opt-msa" class="checkbox-label"><span class="checkbox-mono">--use_msa_server</span></label>
+            </div>
+            <div class="two-col" style="margin-top:var(--space-2)">
+              <div class="form-row">
+                <label class="form-label" for="opt-diffusion">--diffusion_samples</label>
+                <input type="number" id="opt-diffusion" class="form-input mono" value="1" min="1" max="20">
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="opt-workers">--num_workers</label>
+                <input type="number" id="opt-workers" class="form-input mono" value="8" min="1" max="64">
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="opt-accelerator">--accelerator</label>
+              <select id="opt-accelerator" class="form-input mono">
+                <option value="gpu">gpu</option>
+                <option value="cpu">cpu</option>
+                <option value="mps">mps</option>
+                <option value="auto">auto</option>
+              </select>
+            </div>
+
+            <div class="divider"></div>
+
+            <button class="btn btn-primary" id="btn-queue-job" style="width:100%">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Queue Job &amp; Write Script
+            </button>
+          </div>
+
+          <!-- ZSH Script Preview -->
+          <div class="card">
+            <div class="card-title flex-row">
+              Generated Script
+              <div class="spacer"></div>
+              <button class="btn btn-ghost btn-sm" id="btn-copy-script" aria-label="Copy script">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <div class="code-block" id="script-preview" style="white-space:pre;"></div>
+          </div>
+        </div>
+
+        <!-- Right: Job Queue -->
+        <div>
+          <div class="card">
+            <div class="card-title flex-row">
+              Job Queue
+              <div class="spacer"></div>
+              <button class="btn btn-ghost btn-sm" id="btn-clear-jobs">Clear All</button>
+            </div>
+            <div id="job-queue-empty" class="faint text-xs" style="text-align:center;padding:var(--space-8) 0;">
+              No jobs queued yet. Configure and queue a job on the left.
+            </div>
+            <div id="job-queue-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== RESULTS ====== -->
+    <section class="panel" id="panel-results" aria-labelledby="heading-results">
+      <h1 id="heading-results" class="section-heading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Results
+      </h1>
+
+      <!-- KPI cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Runs</div>
+          <div class="kpi-value accent" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Best Confidence</div>
+          <div class="kpi-value success" id="kpi-conf">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Best pIC50</div>
+          <div class="kpi-value success" id="kpi-pic50">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active Binders</div>
+          <div class="kpi-value accent" id="kpi-binders">0</div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-title">Upload Results</div>
+        <p class="text-xs muted mb-3">Run <code>analyze_boltz.py</code> to generate <code>boltz_summary.csv</code>, then upload it here. JSON output files are also accepted.</p>
+        <div class="flex-row">
+          <input type="file" id="results-upload" accept=".csv,.json" style="display:none" aria-label="Upload results file">
+          <button class="btn btn-secondary" id="btn-upload-results">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload CSV / JSON
+          </button>
+          <button class="btn btn-ghost" id="btn-export-results">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-ghost btn-sm" id="btn-clear-results" style="margin-left:auto">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-title">Prediction Results</div>
+        <div id="results-empty" class="faint text-xs" style="text-align:center;padding:var(--space-8) 0;">
+          No results loaded. Upload a CSV from analyze_boltz.py.
+        </div>
+        <div class="scroll-table" id="results-table-wrap" style="display:none">
+          <table class="results-table" role="grid" aria-label="Prediction results">
+            <thead>
+              <tr>
+                <th>YAML</th>
+                <th>CIF File</th>
+                <th>Confidence</th>
+                <th>Affinity Val</th>
+                <th>Prob Binary</th>
+                <th>pIC50</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ====== DOWNLOAD ALL FILES MODAL (v5) ====== -->
+<div class="modal-backdrop" id="run-modal" role="dialog" aria-modal="true" aria-labelledby="run-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <h2 class="modal-title" id="run-modal-title">Download Job Files</h2>
+      <button class="btn btn-ghost btn-sm" id="run-modal-close" aria-label="Close modal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box info" style="margin-bottom:var(--space-3)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>All job files are stored in Firebase Storage and bundled into a ZIP. Extract into your run directory, then execute <code>run_boltz.zsh</code>.</span>
+      </div>
+      <div class="sub-heading mb-2">Files included in ZIP</div>
+      <ul class="file-browser-list" id="dl-file-list">
+        <li class="faint text-xs" style="padding:var(--space-2) 0">Loading files…</li>
+      </ul>
+      <div id="dl-progress-wrap" style="display:none;margin-top:var(--space-3)">
+        <div class="text-xs muted" id="dl-progress-label">Preparing ZIP…</div>
+        <div class="dl-progress-bar-wrap"><div class="dl-progress-bar" id="dl-progress-bar"></div></div>
+      </div>
+      <div class="log-console" id="run-modal-log" aria-live="polite" style="min-height:80px;margin-top:var(--space-3)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="run-modal-close-btn">Close</button>
+      <button class="btn btn-primary" id="btn-download-zip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download All as ZIP
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  FIREBASE INIT
+// ============================================================
+const FB_CONFIG = {
+  apiKey: "demo-key",
+  authDomain: "boltz2-app.firebaseapp.com",
+  databaseURL: "https://boltz2-app-default-rtdb.firebaseio.com/",
+  projectId: "boltz2-app",
+  storageBucket: "boltz2-app.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+let fbApp, fbDb, fbStorage;
+try {
+  fbApp     = firebase.initializeApp(FB_CONFIG);
+  fbDb      = firebase.database();
+  fbStorage = firebase.storage();
+  setStatus('fb', 'ready', 'Firebase OK');
+} catch(e) {
+  setStatus('fb', 'error', 'Firebase Err');
+}
+
+// ============================================================
+//  STATE
+// ============================================================
+const state = {
+  userId:    'user1',
+  boltzPath: '/opt/anaconda3/envs/boltz_2_2_1_env/bin/boltz',
+  currentYaml: null,
+  currentYamlName: null,
+  runDirHandle: null,   // FileSystemDirectoryHandle (Chrome/Edge via showDirectoryPicker)
+  runDirPath: '',       // typed or inferred path string
+  runDirAcquired: false,
+  jobCounter: 0,
+  jobs: [],
+  results: [],
+  proteins: [],
+  ligands: [],
+};
+
+// ============================================================
+//  THEME TOGGLE
+// ============================================================
+(function(){
+  const toggle = document.querySelector('[data-theme-toggle]');
+  const root   = document.documentElement;
+  let theme = 'dark';
+  root.setAttribute('data-theme', theme);
+  if (toggle) {
+    toggle.innerHTML = sunIcon();
+    toggle.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', theme);
+      toggle.innerHTML = theme === 'dark' ? sunIcon() : moonIcon();
+      toggle.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' mode');
+    });
+  }
+  function sunIcon()  { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'; }
+  function moonIcon() { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'; }
+})();
+
+// ============================================================
+//  STATUS HELPERS
+// ============================================================
+function setStatus(key, state_val, label) {
+  const dot = document.getElementById('dot-' + key);
+  const lbl = document.getElementById('lbl-' + key);
+  if (!dot || !lbl) return;
+  dot.className = 'status-dot';
+  if (state_val === 'active')   dot.classList.add('active');
+  if (state_val === 'warning')  dot.classList.add('warning');
+  if (state_val === 'ready')    dot.classList.add('ready');
+  lbl.textContent = label;
+}
+
+// ============================================================
+//  TAB ROUTING
+// ============================================================
+function switchTab(tabId) {
+  document.querySelectorAll('.nav-item').forEach(b => {
+    const active = b.dataset.tab === tabId;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabId));
+  if (tabId === 'jobs') refreshYamlDropdown();
+  if (tabId === 'results') renderResultsTable();
+}
+document.querySelectorAll('.nav-item[data-tab]').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+);
+
+// ============================================================
+//  SUBTABS
+// ============================================================
+document.querySelectorAll('.subtab[data-subtab]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const panel = this.closest('.card') ? this.closest('section') : this.parentElement.parentElement;
+    panel.querySelectorAll('.subtab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    panel.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
+    this.classList.add('active');
+    this.setAttribute('aria-selected','true');
+    const target = panel.querySelector('#subtab-' + this.dataset.subtab);
+    if (target) target.classList.add('active');
+  });
+});
+
+// ============================================================
+//  YAML SCRIPT PREVIEW (live update)
+// ============================================================
+function buildZshScript() {
+  const yamlName  = document.getElementById('job-yaml-select').value || 'input.yaml';
+  const outDir    = document.getElementById('out-dir').value || './output';
+  const boltzBin  = state.boltzPath;
+  const potentials = document.getElementById('opt-potentials').checked;
+  const msa        = document.getElementById('opt-msa').checked;
+  const diffusion  = document.getElementById('opt-diffusion').value;
+  const workers    = document.getElementById('opt-workers').value;
+  const accel      = document.getElementById('opt-accelerator').value;
+
+  const yamlPath = yamlName.endsWith('.yaml') || yamlName.endsWith('.yml') ? yamlName : yamlName + '.yaml';
+  let flags = '';
+  if (potentials) flags += ' \\\n    --use_potentials';
+  if (diffusion)  flags += ` \\\n    --diffusion_samples ${diffusion}`;
+  if (msa)        flags += ' \\\n    --use_msa_server';
+  if (workers)    flags += ` \\\n    --num_workers ${workers}`;
+  flags += ` \\\n    --accelerator ${accel}`;
+  flags += ` \\\n    --out_dir ${outDir}`;
+
+  return `#!/usr/bin/env zsh
+# FoldForge v5 — auto-generated run script
+# YAML: ${yamlPath}
+
+LOGFILE="boltz_run_$(date +%Y%m%d_%H%M%S).log"
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+
+{
+  echo "=== Started at $(date) ==="
+
+  ${boltzBin} predict ./${yamlPath}${flags}
+
+  echo "=== Finished at $(date) ==="
+} 2>&1 | tee "$LOGFILE"`;
+}
+
+function updateScriptPreview() {
+  const el = document.getElementById('script-preview');
+  if (el) el.textContent = buildZshScript();
+}
+['job-yaml-select','out-dir','opt-diffusion','opt-workers','opt-accelerator'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateScriptPreview);
+  if (el) el.addEventListener('change', updateScriptPreview);
+});
+['opt-potentials','opt-msa'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', updateScriptPreview);
+});
+updateScriptPreview();
+
+document.getElementById('btn-copy-script').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(buildZshScript()); showToast('Script copied!'); }
+  catch(e) { showToast('Copy failed', 'warn'); }
+});
+
+// ============================================================
+//  DIRECTORY PICKER — ROBUST CROSS-BROWSER (v4 Safari fix)
+//
+//  ROOT CAUSE of Safari failure in v3:
+//    - Safari does NOT support showDirectoryPicker() as of 2025
+//    - Calling input.click() from inside an async catch block is
+//      BLOCKED by Safari's user-gesture security policy
+//    - The fix: detect Safari SYNCHRONOUSLY at click time, and
+//      call the webkitdirectory input.click() in the same
+//      synchronous call stack as the button click event.
+//
+//  Three-tier strategy:
+//   Tier 1 — Chrome 86+, Edge 86+: showDirectoryPicker()
+//             Returns real FileSystemDirectoryHandle (read+write)
+//   Tier 2 — Safari 11.1+, Firefox 50+, all Chromium:
+//             <input webkitdirectory> hidden file input
+//             Folder name extracted from webkitRelativePath[0]
+//   Tier 3 — Any browser: manual text input, always works
+//
+//  KEY FIX: We detect capability BEFORE any async code runs and
+//  call input.click() SYNCHRONOUSLY from the button's click handler.
+// ============================================================
+
+const dirPickerInput  = document.getElementById('dir-picker-input');
+const dirDisplayInput = document.getElementById('run-dir-display');
+const dirStatusEl     = document.getElementById('run-dir-status');
+const dirStatusText   = document.getElementById('run-dir-status-text');
+
+// Detect: true only if the API exists AND we're not in Safari
+// Safari on macOS 15+ technically exposes showDirectoryPicker in some
+// contexts but silently rejects or returns empty — so we explicitly
+// exclude it and use webkitdirectory instead, which is rock-solid on Safari.
+function isSafari() {
+  const ua = navigator.userAgent;
+  return /^((?!chrome|android).)*safari/i.test(ua);
+}
+const HAS_REAL_DIR_PICKER = typeof window.showDirectoryPicker === 'function' && !isSafari();
+
+// Update the Browse button label to hint at the mode
+(function updateBtnHint() {
+  const btn = document.getElementById('btn-pick-dir');
+  if (btn && !HAS_REAL_DIR_PICKER) {
+    btn.title = 'Safari/Firefox: opens a folder chooser via webkitdirectory';
+  }
+})();
+
+// ---------------------------------------------------------------
+// MAIN CLICK HANDLER — synchronous dispatch, no async at top level
+// This is the Safari fix: input.click() MUST be in the same
+// synchronous call stack as the original user gesture.
+// ---------------------------------------------------------------
+document.getElementById('btn-pick-dir').addEventListener('click', function() {
+  if (HAS_REAL_DIR_PICKER) {
+    // Chrome/Edge: use async showDirectoryPicker
+    tryShowDirectoryPicker();
+  } else {
+    // Safari/Firefox/fallback: call .click() RIGHT NOW, synchronously
+    dirPickerInput.value = '';
+    dirPickerInput.click(); // <-- must be synchronous, in same call stack
+  }
+});
+
+// Tier 1: showDirectoryPicker — Chrome/Edge only
+async function tryShowDirectoryPicker() {
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    state.runDirHandle   = handle;
+    state.runDirPath     = handle.name;
+    state.runDirAcquired = true;
+    dirDisplayInput.value = handle.name;
+    setDirStatus('acquired',
+      '\u2713 Directory acquired (File System Access API): ' + handle.name +
+      ' \u2014 scripts will be written directly to disk');
+    updateScriptPreview();
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      // Unexpected API failure — tell user, don't try async fallback
+      // (we can't call input.click() here — we're in an async context)
+      setDirStatus('error',
+        '\u26a0 showDirectoryPicker failed: ' + e.message +
+        '. Please type the path manually below.');
+      showToast('Directory picker error — type path manually', 'warn');
+    }
+  }
+}
+
+// Tier 2: webkitdirectory file input — Safari, Firefox, Chromium
+// change fires when user picks folder from OS dialog
+dirPickerInput.addEventListener('change', function() {
+  if (!this.files || this.files.length === 0) return;
+
+  const firstFile = this.files[0];
+  let dirName = '';
+  let fullPathHint = '';
+
+  // Extract top-level folder name from webkitRelativePath
+  // Format: "TopFolderName/optional/sub/path/file.ext"
+  if (firstFile.webkitRelativePath) {
+    dirName = firstFile.webkitRelativePath.split('/')[0];
+  } else if (firstFile.name) {
+    dirName = firstFile.name;
+  }
+
+  // Non-standard: some Chromium builds expose File.path (absolute path)
+  // Use it if available to give a more helpful path display
+  if (firstFile.path && typeof firstFile.path === 'string' && firstFile.path.includes('/')) {
+    const rel = firstFile.webkitRelativePath || '';
+    const relParts = rel ? rel.split('/').length : 1;
+    const absoluteParts = firstFile.path.split('/');
+    // Trim the relative sub-path to get folder root
+    const folderParts = absoluteParts.slice(0, absoluteParts.length - (relParts));
+    if (folderParts.length > 1) {
+      fullPathHint = folderParts.join('/');
+    }
+  }
+
+  const displayPath = fullPathHint || dirName || 'Selected folder';
+  state.runDirPath     = displayPath;
+  state.runDirHandle   = null;   // no write handle via this API
+  state.runDirAcquired = false;
+  dirDisplayInput.value = displayPath;
+
+  const n = this.files.length;
+  setDirStatus('manual',
+    '\uD83D\uDCC1 Folder: "' + dirName + '" (' + n + ' file' + (n !== 1 ? 's' : '') + ' found)' +
+    ' \u2014 scripts will be downloaded (no direct write on this browser)');
+  updateScriptPreview();
+});
+
+// Tier 3: Manual text input — always works, no API required
+dirDisplayInput.addEventListener('input', function() {
+  const val = this.value.trim();
+  if (val) {
+    state.runDirPath     = val;
+    state.runDirHandle   = null;
+    state.runDirAcquired = false;
+    setDirStatus('manual', '\u270F Manual path set: ' + val + ' \u2014 scripts will be downloaded');
+  } else {
+    state.runDirPath     = '';
+    state.runDirHandle   = null;
+    state.runDirAcquired = false;
+    setDirStatus('idle', 'No directory selected \u2014 click Browse or type a path');
+  }
+  updateScriptPreview();
+});
+
+function setDirStatus(type, msg) {
+  dirStatusText.textContent = msg;
+  dirStatusEl.className = 'dir-pick-status';
+  if (type === 'acquired') dirStatusEl.classList.add('acquired');
+  if (type === 'manual')   dirStatusEl.classList.add('manual');
+  if (type === 'error')    dirStatusEl.classList.add('manual');
+}
+
+
+
+// ============================================================
+//  SETUP — INSTALL PATH
+// ============================================================
+document.getElementById('btn-save-path').addEventListener('click', async () => {
+  const path = document.getElementById('boltz-path').value.trim();
+  if (!path) return showInlineStatus('path-save-status', 'Path cannot be empty.', 'error');
+  state.boltzPath = path;
+  updateScriptPreview();
+  try {
+    if (fbDb) await fbDb.ref(`users/${state.userId}/boltzPath`).set(path);
+    showInlineStatus('path-save-status', '✓ Path saved to Firebase.', 'success');
+  } catch(e) {
+    state.boltzPath = path;
+    showInlineStatus('path-save-status', '✓ Path saved locally (Firebase offline).', 'warn');
+  }
+});
+
+document.getElementById('btn-load-profile').addEventListener('click', async () => {
+  const uid = document.getElementById('user-id').value.trim();
+  if (!uid) return;
+  state.userId = uid;
+  try {
+    if (fbDb) {
+      const snap = await fbDb.ref(`users/${uid}/boltzPath`).once('value');
+      if (snap.val()) {
+        document.getElementById('boltz-path').value = snap.val();
+        state.boltzPath = snap.val();
+        updateScriptPreview();
+      }
+      showInlineStatus('profile-status', `✓ Profile loaded for ${uid}.`, 'success');
+    }
+  } catch(e) {
+    showInlineStatus('profile-status', 'Could not load profile from Firebase.', 'warn');
+  }
+});
+
+// Try load profile on init
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    if (fbDb) {
+      const snap = await fbDb.ref(`users/${state.userId}/boltzPath`).once('value');
+      if (snap.val()) {
+        document.getElementById('boltz-path').value = snap.val();
+        state.boltzPath = snap.val();
+        updateScriptPreview();
+      }
+    }
+  } catch(e) {}
+  renderProteins();
+  renderLigands();
+  refreshYamlDropdown();
+  listenForResults();
+});
+
+// ============================================================
+//  YAML BUILDER — PROTEINS
+// ============================================================
+function renderProteins() {
+  if (state.proteins.length === 0) state.proteins.push({ id: 'GLR', seq: '' });
+  const container = document.getElementById('protein-chains-container');
+  container.innerHTML = '';
+  state.proteins.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'card mb-2';
+    div.style.cssText = 'margin-bottom:var(--space-2);box-shadow:none;border-color:var(--color-divider)';
+    div.innerHTML = `
+      <div class="flex-row mb-2">
+        <span class="badge badge-primary">Protein ${i+1}</span>
+        ${state.proteins.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeProtein(${i})" aria-label="Remove protein ${i+1}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>` : ''}
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label class="form-label">ID (3 chars)</label>
+          <input type="text" class="form-input mono" maxlength="3" placeholder="GLR" value="${p.id}"
+            oninput="state.proteins[${i}].id=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);this.value=state.proteins[${i}].id">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">FASTA Sequence</label>
+        <textarea class="form-input" rows="3" placeholder="ATVSLWET..." oninput="state.proteins[${i}].seq=this.value.trim()">${p.seq}</textarea>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+function removeProtein(i) { state.proteins.splice(i,1); renderProteins(); }
+document.getElementById('btn-add-protein').addEventListener('click', () => {
+  const ids = ['GLR','GSA','MGA','PRO','REC'];
+  state.proteins.push({ id: ids[state.proteins.length] || 'P' + state.proteins.length, seq: '' });
+  renderProteins();
+});
+
+// ============================================================
+//  YAML BUILDER — LIGANDS
+// ============================================================
+function renderLigands() {
+  if (state.ligands.length === 0) state.ligands.push({ id: 'LIG', smiles: '', useAffinity: true, pocketProtein: '', pocketRes: '' });
+  const container = document.getElementById('ligands-container');
+  container.innerHTML = '';
+  state.ligands.forEach((lg, i) => {
+    const proteinIds = state.proteins.map(p => p.id).filter(Boolean);
+    const protOpts   = proteinIds.map(pid => `<option value="${pid}" ${pid === lg.pocketProtein ? 'selected' : ''}>${pid}</option>`).join('');
+    const div = document.createElement('div');
+    div.className = 'card mb-2';
+    div.style.cssText = 'margin-bottom:var(--space-2);box-shadow:none;border-color:var(--color-divider)';
+    div.innerHTML = `
+      <div class="flex-row mb-2">
+        <span class="badge badge-warning">Ligand ${i+1}</span>
+        ${state.ligands.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeLigand(${i})" aria-label="Remove ligand ${i+1}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>` : ''}
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label class="form-label">ID (3 chars)</label>
+          <input type="text" class="form-input mono" maxlength="3" placeholder="LIG" value="${lg.id}"
+            oninput="state.ligands[${i}].id=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);this.value=state.ligands[${i}].id">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">SMILES String</label>
+        <textarea class="form-input" rows="2" placeholder="CC[C@H]1C[C@@H]..." oninput="state.ligands[${i}].smiles=this.value.trim()">${lg.smiles}</textarea>
+      </div>
+      <div class="checkbox-row mb-2">
+        <input type="checkbox" id="aff-${i}" ${lg.useAffinity ? 'checked' : ''} onchange="state.ligands[${i}].useAffinity=this.checked">
+        <label for="aff-${i}" class="checkbox-label">Include affinity prediction</label>
+      </div>
+      <div class="sub-heading" style="font-size:11px;margin-bottom:var(--space-1)">Pocket Constraint (optional)</div>
+      <div class="two-col">
+        <div class="form-row">
+          <label class="form-label">Protein Chain</label>
+          <select class="form-input mono" onchange="state.ligands[${i}].pocketProtein=this.value">
+            <option value="">— none —</option>
+            ${protOpts}
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Contact Residue</label>
+          <input type="number" class="form-input mono" placeholder="353" value="${lg.pocketRes}"
+            oninput="state.ligands[${i}].pocketRes=this.value">
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+function removeLigand(i) { state.ligands.splice(i,1); renderLigands(); }
+document.getElementById('btn-add-ligand').addEventListener('click', () => {
+  const ids = ['LIG','D11','CPD','MOL','SMO'];
+  state.ligands.push({ id: ids[state.ligands.length] || 'L' + state.ligands.length, smiles: '', useAffinity: true, pocketProtein: '', pocketRes: '' });
+  renderLigands();
+});
+
+// ============================================================
+//  YAML GENERATION
+// ============================================================
+document.getElementById('btn-generate-yaml').addEventListener('click', () => {
+  const filename = (document.getElementById('yaml-filename').value.trim() || 'input').replace(/\.ya?ml$/,'');
+  let yaml = 'sequences:\n';
+  state.proteins.forEach(p => {
+    if (!p.seq) return;
+    yaml += `  - protein:\n      id: ${p.id || 'PRO'}\n      sequence: ${p.seq.replace(/\s/g,'')}\n`;
+  });
+  state.ligands.forEach(lg => {
+    if (!lg.smiles) return;
+    yaml += `  - ligand:\n      smiles: '${lg.smiles}'\n      id: ${lg.id || 'LIG'}\n`;
+  });
+  const hasPocket = state.ligands.some(lg => lg.pocketProtein && lg.pocketRes);
+  if (hasPocket) {
+    yaml += 'constraints:\n';
+    state.ligands.forEach(lg => {
+      if (lg.pocketProtein && lg.pocketRes) {
+        yaml += `  - pocket:\n      binder: ${lg.id}\n      contacts: [[${lg.pocketProtein}, ${lg.pocketRes}]]\n`;
+      }
+    });
+  }
+  const hasAffinity = state.ligands.some(lg => lg.useAffinity && lg.smiles);
+  if (hasAffinity) {
+    yaml += 'properties:\n';
+    state.ligands.forEach(lg => {
+      if (lg.useAffinity && lg.smiles) {
+        yaml += `  - affinity:\n      binder: ${lg.id}\n`;
+      }
+    });
+  }
+
+  state.currentYaml     = yaml;
+  state.currentYamlName = filename + '.yaml';
+  document.getElementById('yaml-preview-content').textContent = yaml;
+  document.getElementById('yaml-preview-filename').textContent = state.currentYamlName;
+  setStatus('yaml', 'ready', state.currentYamlName);
+
+  // Switch to preview tab
+  document.querySelectorAll('.subtab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
+  const previewTab = document.querySelector('.subtab[data-subtab="yaml-preview"]');
+  const previewPanel = document.getElementById('subtab-yaml-preview');
+  if (previewTab)  { previewTab.classList.add('active'); previewTab.setAttribute('aria-selected','true'); }
+  if (previewPanel) previewPanel.classList.add('active');
+});
+
+document.getElementById('btn-copy-yaml').addEventListener('click', async () => {
+  if (!state.currentYaml) return showToast('No YAML generated yet.', 'warn');
+  try { await navigator.clipboard.writeText(state.currentYaml); showToast('YAML copied!'); }
+  catch(e) { showToast('Copy failed.','warn'); }
+});
+document.getElementById('btn-download-yaml').addEventListener('click', () => {
+  if (!state.currentYaml) return showToast('No YAML to download.', 'warn');
+  downloadBlob(state.currentYaml, state.currentYamlName || 'input.yaml', 'text/yaml');
+});
+document.getElementById('btn-save-yaml-firebase').addEventListener('click', async () => {
+  if (!state.currentYaml) return showInlineStatus('yaml-save-status', 'No YAML to save.', 'error');
+  const key = state.currentYamlName.replace(/[^a-zA-Z0-9_-]/g,'_');
+  try {
+    if (fbDb) {
+      await fbDb.ref(`users/${state.userId}/yamls/${key}`).set({
+        name: state.currentYamlName,
+        content: state.currentYaml,
+        savedAt: Date.now()
+      });
+      showInlineStatus('yaml-save-status', '✓ Saved to Firebase.', 'success');
+      refreshYamlDropdown();
+    } else {
+      showInlineStatus('yaml-save-status', 'Firebase unavailable. Download instead.', 'warn');
+    }
+  } catch(e) {
+    showInlineStatus('yaml-save-status', 'Firebase write failed: ' + e.message, 'error');
+  }
+});
+
+// ============================================================
+//  YAML DROPDOWN
+// ============================================================
+async function refreshYamlDropdown() {
+  const select = document.getElementById('job-yaml-select');
+  const prev = select.value;
+  select.innerHTML = '<option value="">— Select YAML —</option>';
+  // Add currently generated yaml
+  if (state.currentYamlName) {
+    const opt = document.createElement('option');
+    opt.value = state.currentYamlName;
+    opt.textContent = '★ ' + state.currentYamlName + ' (current session)';
+    select.appendChild(opt);
+  }
+  try {
+    if (fbDb) {
+      const snap = await fbDb.ref(`users/${state.userId}/yamls`).once('value');
+      const yamls = snap.val() || {};
+      Object.values(yamls).forEach(y => {
+        if (y.name !== state.currentYamlName) {
+          const opt = document.createElement('option');
+          opt.value = y.name;
+          opt.textContent = y.name;
+          select.appendChild(opt);
+        }
+      });
+    }
+  } catch(e) {}
+  if (prev) select.value = prev;
+  updateScriptPreview();
+}
+document.getElementById('btn-refresh-yamls').addEventListener('click', refreshYamlDropdown);
+
+// ============================================================
+//  QUEUE JOB
+// ============================================================
+document.getElementById('btn-queue-job').addEventListener('click', async () => {
+  const yamlSel = document.getElementById('job-yaml-select').value;
+  if (!yamlSel) return showToast('Select a YAML first.', 'warn');
+
+  const jobId   = `job_${Date.now()}_${++state.jobCounter}`;
+  const script  = buildZshScript();
+  const scriptName = `run_boltz_${yamlSel.replace(/\.ya?ml$/,'').replace(/[^a-zA-Z0-9_-]/g,'_')}.zsh`;
+  const runDir  = state.runDirPath || '(no directory selected)';
+
+  const job = {
+    id: jobId,
+    yamlName: yamlSel,
+    scriptName,
+    script,
+    runDir,
+    runDirAcquired: state.runDirAcquired,
+    outDir: document.getElementById('out-dir').value || './output',
+    status: 'queued',
+    createdAt: Date.now(),
+    params: {
+      usePotentials: document.getElementById('opt-potentials').checked,
+      useMsa:        document.getElementById('opt-msa').checked,
+      diffusion:     document.getElementById('opt-diffusion').value,
+      workers:       document.getElementById('opt-workers').value,
+      accelerator:   document.getElementById('opt-accelerator').value,
+    }
+  };
+  state.jobs.unshift(job);
+  setStatus('job', 'warning', 'Queued');
+
+  try {
+    if (fbDb) await fbDb.ref(`users/${state.userId}/jobs/${jobId}`).set({ ...job, script: '(see zip package)' });
+  } catch(e) {}
+
+  try { await saveFilesToStorage(job); } catch(e) { console.warn('saveFilesToStorage failed', e); }
+
+  renderJobQueue();
+  showToast(`Job queued: ${scriptName}`);
+});
+
+// ============================================================
+//  RENDER JOB QUEUE
+// ============================================================
+function renderJobQueue() {
+  const list    = document.getElementById('job-queue-list');
+  const empty   = document.getElementById('job-queue-empty');
+  list.innerHTML = '';
+  if (state.jobs.length === 0) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  state.jobs.forEach(job => {
+    const age  = timeSince(job.createdAt);
+    const statusBadge = {
+      queued:  '<span class="badge badge-warning">queued</span>',
+      running: '<span class="badge badge-primary">running</span>',
+      done:    '<span class="badge badge-success">done</span>',
+      error:   '<span class="badge badge-error">error</span>',
+    }[job.status] || '';
+
+    const div = document.createElement('div');
+    div.className = 'job-card';
+    div.innerHTML = `
+      <div class="job-card-header">
+        ${statusBadge}
+        <span class="job-card-title">${job.scriptName}</span>
+        <span class="spacer"></span>
+        <span class="job-card-meta">${age}</span>
+      </div>
+      <div class="text-xs muted mono mb-2">YAML: ${job.yamlName}</div>
+      <div class="text-xs faint mono mb-2">Dir: ${job.runDir}</div>
+      <div class="job-card-actions">
+        <button class="btn btn-success btn-sm" onclick="runJobOnLocal('${job.id}')" aria-label="Run job ${job.id} on local machine">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Download All Files
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadJobScript('${job.id}')" aria-label="Download script for job ${job.id}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download .zsh
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteJob('${job.id}')" aria-label="Delete job ${job.id}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+document.getElementById('btn-clear-jobs').addEventListener('click', () => {
+  state.jobs = [];
+  renderJobQueue();
+  setStatus('job','','No Job');
+});
+
+// ============================================================
+//  FIREBASE STORAGE / ZIP DOWNLOAD
+// ============================================================
+const ANALYZE_BOLTZ_PY = `#!/usr/bin/env python3
+"""
+analyze_boltz.py  —  FoldForge v5
+Parses Boltz-2 JSON confidence outputs into a summary CSV.
+Usage: python analyze_boltz.py [results_dir]  (default: ./output)
+"""
+import os, sys, json, csv, glob
+
+def pic50(val):
+    try: return round((6 - float(val)) * 1.364, 3)
+    except: return ''
+
+results_dir = sys.argv[1] if len(sys.argv) > 1 else './output'
+rows = []
+
+for conf_file in glob.glob(os.path.join(results_dir, '**', 'confidence_*.json'), recursive=True):
+    try:
+        with open(conf_file) as f:
+            d = json.load(f)
+        yaml_name = os.path.basename(os.path.dirname(os.path.dirname(conf_file)))
+        cif_file  = conf_file.replace('confidence_', 'structure_').replace('.json', '.cif')
+        row = {
+            'yaml_name': yaml_name,
+            'cif_file': os.path.basename(cif_file) if os.path.exists(cif_file) else '',
+            'confidence_score': d.get('confidence_score', ''),
+            'affinity_pred_value1': d.get('affinity_pred_value1', ''),
+            'affinity_probability_binary1': d.get('affinity_probability_binary1', ''),
+            'pIC50': pic50(d.get('affinity_pred_value1', '')),
+        }
+        rows.append(row)
+    except Exception as e:
+        print(f'Skipping {conf_file}: {e}')
+
+out_csv = os.path.join(results_dir, 'boltz_summary.csv')
+if rows:
+    with open(out_csv, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=rows[0].keys())
+        w.writeheader()
+        w.writerows(rows)
+    print(f'Written {len(rows)} rows to {out_csv}')
+else:
+    print('No confidence JSON files found.')
+`;
+
+let _dlJob = null;
+
+async function saveFilesToStorage(job) {
+  if (!fbStorage) return;
+  const base = `users/${state.userId}/jobs/${job.id}`;
+  let yamlContent = state.currentYaml || '';
+
+  try {
+    const snap = await fbDb.ref(`users/${state.userId}/yamls/${job.yamlName.replace(/\.ya?ml$/,'')}`).once('value');
+    const data = snap.val();
+    if (data && (data.content || data.yaml)) yamlContent = data.content || data.yaml;
+  } catch(e) {}
+
+  const readme =
+    `FoldForge v5 — Job Package
+` +
+    `===========================
+` +
+    `Job ID   : ${job.id}
+` +
+    `YAML     : ${job.yamlName}
+` +
+    `Script   : ${job.scriptName}
+` +
+    `Run Dir  : ${job.runDir}
+` +
+    `Generated: ${new Date().toISOString()}
+
+` +
+    `HOW TO RUN
+` +
+    `----------
+` +
+    `1. Extract this ZIP into your run directory.
+` +
+    `2. Open Terminal and cd to that directory.
+` +
+    `3. chmod +x ${job.scriptName} && zsh ${job.scriptName}
+` +
+    `4. After completion, run: python3 analyze_boltz.py ./output
+` +
+    `5. Upload boltz_summary.csv in the FoldForge Results tab.
+`;
+
+  const files = [
+    { name: job.yamlName, content: yamlContent || '# YAML content unavailable\n', type: 'text/yaml' },
+    { name: job.scriptName, content: job.script, type: 'application/x-sh' },
+    { name: 'analyze_boltz.py', content: ANALYZE_BOLTZ_PY, type: 'text/x-python' },
+    { name: 'README.txt', content: readme, type: 'text/plain' },
+  ];
+
+  for (const file of files) {
+    try {
+      await fbStorage.ref(`${base}/${file.name}`).put(new Blob([file.content], { type: file.type }));
+    } catch(e) {
+      console.warn('Storage upload failed:', file.name, e);
+    }
+  }
+}
+
+async function openDownloadModal(jobId) {
+  _dlJob = state.jobs.find(j => j.id === jobId);
+  if (!_dlJob) return;
+  openRunModal();
+
+  const log = document.getElementById('run-modal-log');
+  const list = document.getElementById('dl-file-list');
+  const wrap = document.getElementById('dl-progress-wrap');
+  const bar = document.getElementById('dl-progress-bar');
+  const lbl = document.getElementById('dl-progress-label');
+
+  log.innerHTML = '';
+  list.innerHTML = '';
+  wrap.style.display = 'none';
+  bar.style.width = '0%';
+  lbl.textContent = 'Preparing ZIP…';
+
+  function logLine(msg, cls) {
+    const span = document.createElement('span');
+    span.className = 'log-line' + (cls ? ' log-' + cls : '');
+    span.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+    log.appendChild(span);
+    log.appendChild(document.createTextNode('\n'));
+    log.scrollTop = log.scrollHeight;
+  }
+
+  [
+    { name: _dlJob.yamlName, ext: 'yaml', desc: 'Boltz-2 input' },
+    { name: _dlJob.scriptName, ext: 'zsh', desc: 'Run script' },
+    { name: 'analyze_boltz.py', ext: 'py', desc: 'Results analyser' },
+    { name: 'README.txt', ext: 'txt', desc: 'Instructions' },
+  ].forEach(f => {
+    const li = document.createElement('li');
+    li.className = 'file-browser-item';
+    li.innerHTML = `<span class="file-type-badge">${f.ext}</span><span class="file-name">${f.name}</span><span class="file-meta">${f.desc}</span>`;
+    list.appendChild(li);
+  });
+
+  logLine(`Package ready for job ${_dlJob.id}`, 'info');
+  logLine(fbStorage ? 'Firebase Storage connected.' : 'Firebase Storage unavailable, using in-memory fallback.', fbStorage ? 'ok' : 'warn');
+}
+
+async function buildAndDownloadZip() {
+  if (!_dlJob) return;
+  const log = document.getElementById('run-modal-log');
+  const wrap = document.getElementById('dl-progress-wrap');
+  const bar = document.getElementById('dl-progress-bar');
+  const lbl = document.getElementById('dl-progress-label');
+  const btn = document.getElementById('btn-download-zip');
+
+  function logLine(msg, cls) {
+    const span = document.createElement('span');
+    span.className = 'log-line' + (cls ? ' log-' + cls : '');
+    span.textContent = new Date().toLocaleTimeString() + '  ' + msg;
+    log.appendChild(span);
+    log.appendChild(document.createTextNode('\n'));
+    log.scrollTop = log.scrollHeight;
+  }
+
+  btn.disabled = true;
+  wrap.style.display = '';
+  bar.style.width = '0%';
+  lbl.textContent = 'Collecting files…';
+
+  let yamlContent = state.currentYaml || '';
+  try {
+    const snap = await fbDb.ref(`users/${state.userId}/yamls/${_dlJob.yamlName.replace(/\.ya?ml$/,'')}`).once('value');
+    const data = snap.val();
+    if (data && (data.content || data.yaml)) yamlContent = data.content || data.yaml;
+  } catch(e) {}
+
+  const readme =
+    `FoldForge v5 — Job Package
+===========================
+` +
+    `Job ID   : ${_dlJob.id}
+YAML     : ${_dlJob.yamlName}
+` +
+    `Script   : ${_dlJob.scriptName}
+Run Dir  : ${_dlJob.runDir}
+` +
+    `Generated: ${new Date().toISOString()}
+
+` +
+    `1. Extract this ZIP into your run directory.
+` +
+    `2. cd to that directory.
+` +
+    `3. chmod +x ${_dlJob.scriptName} && zsh ${_dlJob.scriptName}
+` +
+    `4. python3 analyze_boltz.py ./output
+`;
+
+  const files = [
+    { name: _dlJob.yamlName, fallback: yamlContent || '# YAML content unavailable\n' },
+    { name: _dlJob.scriptName, fallback: _dlJob.script },
+    { name: 'analyze_boltz.py', fallback: ANALYZE_BOLTZ_PY },
+    { name: 'README.txt', fallback: readme },
+  ];
+
+  const zip = new JSZip();
+  const folder = zip.folder(_dlJob.scriptName.replace(/\.zsh$/,'') || 'foldforge_job');
+  const base = `users/${state.userId}/jobs/${_dlJob.id}`;
+
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    lbl.textContent = `Adding ${f.name}…`;
+    bar.style.width = `${Math.round((i / (files.length + 1)) * 90)}%`;
+    let content = f.fallback;
+
+    if (fbStorage) {
+      try {
+        const url = await fbStorage.ref(`${base}/${f.name}`).getDownloadURL();
+        const resp = await fetch(url);
+        if (resp.ok) {
+          content = await resp.text();
+          logLine(`Fetched ${f.name} from Firebase Storage`, 'ok');
+        } else {
+          logLine(`Using fallback copy for ${f.name}`, 'warn');
+        }
+      } catch(e) {
+        logLine(`Using fallback copy for ${f.name}`, 'warn');
+      }
+    } else {
+      logLine(`Using in-memory copy for ${f.name}`, 'warn');
+    }
+
+    folder.file(f.name, content);
+  }
+
+  lbl.textContent = 'Generating ZIP…';
+  bar.style.width = '95%';
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const url = URL.createObjectURL(blob);
+  const zipName = `foldforge_${_dlJob.scriptName.replace(/\.zsh$/,'')}_${Date.now()}.zip`;
+  downloadBlob(url, zipName, 'application/zip', true);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  bar.style.width = '100%';
+  lbl.textContent = 'ZIP downloaded';
+  logLine(`ZIP downloaded: ${zipName}`, 'ok');
+  updateJobStatus(_dlJob.id, 'done');
+  btn.disabled = false;
+}
+
+function updateJobStatus(jobId, status) {
+  const job = state.jobs.find(j => j.id === jobId);
+  if (job) {
+    job.status = status;
+    renderJobQueue();
+    if (status === 'running') setStatus('job', 'active', 'Running');
+  }
+  try { if (fbDb) fbDb.ref(`users/${state.userId}/jobs/${jobId}/status`).set(status); } catch(e) {}
+}
+
+function downloadJobScript(jobId) {
+  const job = state.jobs.find(j => j.id === jobId);
+  if (job) downloadBlob(job.script, job.scriptName, 'application/x-sh');
+}
+function deleteJob(jobId) {
+  state.jobs = state.jobs.filter(j => j.id !== jobId);
+  renderJobQueue();
+  try { if (fbDb) fbDb.ref(`users/${state.userId}/jobs/${jobId}`).remove(); } catch(e) {}
+}
+
+// ============================================================
+//  DOWNLOAD MODAL
+// ============================================================
+function openRunModal()  { document.getElementById('run-modal').classList.add('open'); }
+function closeRunModal() {
+  document.getElementById('run-modal').classList.remove('open');
+  _dlJob = null;
+  document.getElementById('btn-download-zip').disabled = false;
+}
+document.getElementById('run-modal-close').addEventListener('click', closeRunModal);
+document.getElementById('run-modal-close-btn').addEventListener('click', closeRunModal);
+document.getElementById('run-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeRunModal(); });
+document.getElementById('btn-download-zip').addEventListener('click', buildAndDownloadZip);
+
+// ============================================================
+//  RESULTS
+// ============================================================
+document.getElementById('btn-upload-results').addEventListener('click', () =>
+  document.getElementById('results-upload').click());
+
+document.getElementById('results-upload').addEventListener('change', async function() {
+  if (!this.files || !this.files[0]) return;
+  const file = this.files[0];
+  const text = await file.text();
+  if (file.name.endsWith('.csv')) parseResultsCSV(text);
+  else if (file.name.endsWith('.json')) parseResultsJSON(text);
+  this.value = '';
+});
+
+function parseResultsCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return showToast('CSV appears empty.','warn');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  lines.slice(1).forEach(line => {
+    if (!line.trim()) return;
+    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g,''));
+    const row = {};
+    headers.forEach((h, i) => row[h] = vals[i] || '');
+    const mapped = {
+      input_yaml_name:              row['input YAML name'] || row['input_yaml_name'] || '',
+      output_cif_name:              row['output cif name'] || row['output_cif_name'] || '',
+      confidence_score:             parseFloat(row['confidence_score']) || null,
+      affinity_pred_value1:         parseFloat(row['affinity_pred_value1']) || null,
+      affinity_probability_binary1: parseFloat(row['affinity_probability_binary1']) || null,
+      pIC50:                        parseFloat(row['pIC50']) || null,
+    };
+    state.results.push(mapped);
+  });
+  saveResultsToFirebase();
+  renderResultsTable();
+  showToast(`Loaded ${lines.length - 1} result(s).`);
+}
+
+function parseResultsJSON(text) {
+  try {
+    const data = JSON.parse(text);
+    const arr  = Array.isArray(data) ? data : [data];
+    arr.forEach(row => state.results.push({
+      input_yaml_name:              row.input_yaml_name || row['input YAML name'] || '',
+      output_cif_name:              row.output_cif_name || row['output cif name'] || '',
+      confidence_score:             parseFloat(row.confidence_score) || null,
+      affinity_pred_value1:         parseFloat(row.affinity_pred_value1) || null,
+      affinity_probability_binary1: parseFloat(row.affinity_probability_binary1) || null,
+      pIC50:                        parseFloat(row.pIC50) || null,
+    }));
+    saveResultsToFirebase();
+    renderResultsTable();
+    showToast(`Loaded ${arr.length} result(s) from JSON.`);
+  } catch(e) { showToast('JSON parse failed: ' + e.message, 'err'); }
+}
+
+function saveResultsToFirebase() {
+  try {
+    if (fbDb) fbDb.ref(`users/${state.userId}/results`).set(state.results);
+  } catch(e) {}
+}
+
+function listenForResults() {
+  try {
+    if (fbDb) {
+      fbDb.ref(`users/${state.userId}/results`).on('value', snap => {
+        const val = snap.val();
+        if (Array.isArray(val) && val.length > state.results.length) {
+          state.results = val;
+          renderResultsTable();
+        }
+      });
+    }
+  } catch(e) {}
+}
+
+function renderResultsTable() {
+  const empty = document.getElementById('results-empty');
+  const wrap  = document.getElementById('results-table-wrap');
+  const tbody = document.getElementById('results-tbody');
+
+  if (state.results.length === 0) {
+    empty.style.display = '';
+    wrap.style.display  = 'none';
+    ['kpi-total','kpi-conf','kpi-pic50','kpi-binders'].forEach(id =>
+      document.getElementById(id).textContent = id === 'kpi-total' || id === 'kpi-binders' ? '0' : '—');
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display  = '';
+
+  const confs  = state.results.map(r => r.confidence_score).filter(v => v !== null);
+  const pics   = state.results.map(r => r.pIC50).filter(v => v !== null);
+  const binders = state.results.filter(r => r.affinity_probability_binary1 !== null && r.affinity_probability_binary1 > 0.5).length;
+  document.getElementById('kpi-total').textContent    = state.results.length;
+  document.getElementById('kpi-conf').textContent     = confs.length  ? Math.max(...confs).toFixed(3)  : '—';
+  document.getElementById('kpi-pic50').textContent    = pics.length   ? Math.max(...pics).toFixed(2)   : '—';
+  document.getElementById('kpi-binders').textContent  = binders;
+
+  tbody.innerHTML = '';
+  state.results.forEach((r, i) => {
+    const confColor = r.confidence_score === null ? '' :
+      r.confidence_score > 0.7 ? 'color:var(--color-success)' :
+      r.confidence_score > 0.4 ? 'color:var(--color-warning)' : 'color:var(--color-error)';
+    const probColor = r.affinity_probability_binary1 === null ? '' :
+      r.affinity_probability_binary1 > 0.5 ? 'color:var(--color-success)' : 'color:var(--color-text-muted)';
+    const pic50Color = r.pIC50 === null ? '' :
+      r.pIC50 > 6 ? 'color:var(--color-success)' :
+      r.pIC50 > 4 ? 'color:var(--color-warning)' : 'color:var(--color-error)';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono">${r.input_yaml_name || '—'}</td>
+      <td class="mono">${r.output_cif_name || '—'}</td>
+      <td class="mono" style="${confColor}">${r.confidence_score !== null ? r.confidence_score.toFixed(4) : '—'}</td>
+      <td class="mono">${r.affinity_pred_value1 !== null ? r.affinity_pred_value1.toFixed(4) : '—'}</td>
+      <td class="mono" style="${probColor}">${r.affinity_probability_binary1 !== null ? r.affinity_probability_binary1.toFixed(4) : '—'}</td>
+      <td class="mono" style="${pic50Color}">${r.pIC50 !== null ? r.pIC50.toFixed(3) : '—'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="deleteResult(${i})" aria-label="Delete result ${i+1}">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteResult(i) {
+  state.results.splice(i, 1);
+  saveResultsToFirebase();
+  renderResultsTable();
+}
+
+document.getElementById('btn-clear-results').addEventListener('click', () => {
+  state.results = [];
+  saveResultsToFirebase();
+  renderResultsTable();
+});
+
+document.getElementById('btn-export-results').addEventListener('click', () => {
+  if (state.results.length === 0) return showToast('No results to export.','warn');
+  const header = 'input YAML name,output cif name,confidence_score,affinity_pred_value1,affinity_probability_binary1,pIC50\n';
+  const rows   = state.results.map(r =>
+    `${r.input_yaml_name},${r.output_cif_name},${r.confidence_score ?? ''},${r.affinity_pred_value1 ?? ''},${r.affinity_probability_binary1 ?? ''},${r.pIC50 ?? ''}`
+  ).join('\n');
+  downloadBlob(header + rows, 'foldforge_results.csv', 'text/csv');
+});
+
+// ============================================================
+//  UTILITIES
+// ============================================================
+function downloadBlob(content, filename, mime, isUrl = false) {
+  const a = document.createElement('a');
+  a.href = isUrl ? content : URL.createObjectURL(new Blob([content], { type: mime || 'application/octet-stream' }));
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if (!isUrl) setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function showInlineStatus(containerId, msg, type) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const colorMap = { success:'var(--color-success)', error:'var(--color-error)', warn:'var(--color-warning)', info:'var(--color-primary)' };
+  el.innerHTML = `<span style="font-size:var(--text-xs);color:${colorMap[type]||colorMap.info}">${msg}</span>`;
+}
+
+let toastTimeout;
+function showToast(msg, type) {
+  let toast = document.getElementById('ff-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'ff-toast';
+    toast.style.cssText = `position:fixed;bottom:var(--space-6);right:var(--space-6);z-index:9999;
+      padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);
+      font-size:var(--text-xs);font-family:var(--font-body);
+      box-shadow:var(--shadow-lg);transition:opacity 200ms ease;pointer-events:none;`;
+    document.body.appendChild(toast);
+  }
+  const colorMap = { warn:'var(--color-warning-dim)', err:'var(--color-error-dim)', success:'var(--color-success-dim)' };
+  const textMap  = { warn:'var(--color-warning)', err:'var(--color-error)', success:'var(--color-success)' };
+  toast.style.background = colorMap[type] || 'var(--color-surface-offset)';
+  toast.style.color      = textMap[type]  || 'var(--color-text)';
+  toast.style.border     = '1px solid ' + (textMap[type] || 'var(--color-border)');
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+}
+
+function timeSince(ts) {
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return Math.floor(sec/60) + 'm ago';
+  return Math.floor(sec/3600) + 'h ago';
+}
+
+// Initial render
+renderProteins();
+renderLigands();
+updateScriptPreview();
+</script>
+</body>
+</html>
