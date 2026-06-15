@@ -1,6 +1,22 @@
-# ForgeFold
+# ⚙️ ForgeFold
+
+> **A single-file browser GUI for the whole Boltz-2 workflow: build, run, review.**
+
+![type](https://img.shields.io/badge/type-single--file%20HTML-E34F26?logo=html5&logoColor=white) ![engine](https://img.shields.io/badge/engine-Boltz--2-467FF7) ![build step](https://img.shields.io/badge/build%20step-none-00897B) ![runs](https://img.shields.io/badge/runs-in%20browser-9b51e0) ![author](https://img.shields.io/badge/author-Marc%20C.%20Deller%2C%20D.Phil.-1C244B)
+
+<table>
+<tr>
+<td>🌐 <b>Website</b></td><td><a href="https://marcdeller.com" target="_blank" rel="noopener noreferrer">marcdeller.com</a></td>
+<td>✉️ <b>Contact</b></td><td><a href="mailto:marc@marcdeller.com">marc@marcdeller.com</a></td>
+<td>🐙 <b>GitHub</b></td><td><a href="https://github.com/bellcheddar/FoldForge" target="_blank" rel="noopener noreferrer">bellcheddar/FoldForge</a></td>
+</tr>
+</table>
+
+---
 
 ForgeFold is a browser-based interface for preparing, running, and reviewing Boltz-2 structure-prediction jobs. It brings Boltz setup, YAML construction, job-script generation, and result inspection into a single lightweight HTML application. 
+
+Why it matters: the Boltz-2 workflow normally means hopping between a text editor for YAML, a shell for the run script, and a spreadsheet for the results, with plenty of room for format mistakes along the way. ForgeFold pulls all four stages (set the binary path, build the input YAML from sequences and SMILES, generate the run script, and review confidence and affinity metrics) into one lightweight HTML application that opens in any browser with no build step. It is useful for structure-guided teams who want to lower the friction of repeated co-folding runs and give less command-line-comfortable colleagues a clean, guided path from input preparation to result triage.
 
 ## Overview
 
@@ -86,4 +102,19 @@ Add the project license here.
 
 ## Source context
 
-This README was drafted from the attached ForgeFold application content and interface text. 
+This README was drafted from the attached ForgeFold application content and interface text.
+
+---
+
+## 👤 Author
+
+**Marc C. Deller, D.Phil.**  
+Structural biologist & drug discovery scientist  
+
+<table>
+<tr>
+<td>🌐</td><td><a href="https://marcdeller.com" target="_blank" rel="noopener noreferrer">marcdeller.com</a></td>
+<td>✉️</td><td><a href="mailto:marc@marcdeller.com">marc@marcdeller.com</a></td>
+<td>🐙</td><td><a href="https://github.com/bellcheddar/FoldForge" target="_blank" rel="noopener noreferrer">github.com/bellcheddar/FoldForge</a></td>
+</tr>
+</table>
